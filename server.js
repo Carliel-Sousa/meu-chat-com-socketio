@@ -7,55 +7,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Adiciona esta linha para servir arquivos estáticos
-app.use(express.static(__dirname));
-
-// Serve o arquivo HTML
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'teste.html'));
-    //res.send('<h1>Olá! A página está funcionando.</h1>');
-});
+// Define a pasta 'public' como a pasta de arquivos estáticos
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Lógica de conexão e mensagens do chat
-io.on('connection', (socket) => {
-    console.log('Um usuário conectou-se!');
-    
-    socket.on('login', (username) => {
-        socket.username = username;
-        console.log(`Usuário ${username} entrou no chat`);
-        io.emit('chat message', { user: 'Sistema', msg: `${username} entrou no chat.` });
-    });
-
-    socket.on('chat message', (data) => {
-        if(data.recipient){
-            // Se houver um destinatário, é uma mensagem privada
-        const recipientSocketId = Object.keys(users).find(key => users[key] === data.recipient);
-        if (recipientSocketId) {
-            // Envia a mensagem para o destinatário
-            io.to(recipientSocketId).emit('chat message', { user: data.user, msg: `(privado): ${data.msg}` });
-            // Envia uma cópia para o remetente para que ele veja a mensagem que enviou
-            io.to(socket.id).emit('chat message', { user: data.user, msg: `(para ${data.recipient}): ${data.msg}` });
-        }
-        }else{
-        io.emit('chat message', { user: data.user, msg: data.msg });
-        }
-    });
-
-    socket.on('disconnect', () => {
-        if (socket.username) {
-            console.log(`Usuário ${socket.username} desconectou-se.`);
-            io.emit('chat message', { user: 'Sistema', msg: `${socket.username} saiu do chat.` });
-        }
-    });
-});
-
-const PORT = 3000;
-server.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}. Acesse http://localhost:${PORT} no seu navegador.`);
-});
-
-// Objeto para armazenar usuários online
-const users = {};
+const users = {}; // Objeto para armazenar usuários online
 
 io.on('connection', (socket) => {
     console.log('Um usuário conectou-se!');
@@ -68,6 +24,21 @@ io.on('connection', (socket) => {
         io.emit('update users list', Object.values(users)); // Envia a lista atualizada
     });
 
+    socket.on('chat message', (data) => {
+        if (data.recipient) {
+            // Se houver um destinatário, é uma mensagem privada
+            const recipientSocketId = Object.keys(users).find(key => users[key] === data.recipient);
+            if (recipientSocketId) {
+                // Envia a mensagem para o destinatário
+                io.to(recipientSocketId).emit('chat message', { user: data.user, msg: `(privado): ${data.msg}` });
+                // Envia uma cópia para o remetente para que ele veja a mensagem que enviou
+                io.to(socket.id).emit('chat message', { user: data.user, msg: `(para ${data.recipient}): ${data.msg}` });
+            }
+        } else {
+            io.emit('chat message', { user: data.user, msg: data.msg });
+        }
+    });
+
     socket.on('disconnect', () => {
         if (socket.username) {
             delete users[socket.id]; // Remove o usuário do objeto
@@ -76,5 +47,4 @@ io.on('connection', (socket) => {
             io.emit('update users list', Object.values(users)); // Envia a lista atualizada
         }
     });
-    // ... (o resto do código)
 });
