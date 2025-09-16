@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Início do listener 'DOMContentLoaded'
-    const socket = io();
+    const socket = io("https://meu-chat-socketio.onrender.com");
 
     // Variáveis da tela de login
     const loginForm = document.getElementById('login-form');
