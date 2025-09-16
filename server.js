@@ -9,6 +9,9 @@ const io = new Server(server);
 
 // Define a pasta 'public' como a pasta de arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'teste.html'));
+});
 
 // Lógica de conexão e mensagens do chat
 const users = {}; // Objeto para armazenar usuários online
